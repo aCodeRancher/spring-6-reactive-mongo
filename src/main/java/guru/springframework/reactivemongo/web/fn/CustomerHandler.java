@@ -1,0 +1,33 @@
+package guru.springframework.reactivemongo.web.fn;
+
+import guru.springframework.reactivemongo.model.BeerDTO;
+import guru.springframework.reactivemongo.model.CustomerDTO;
+import guru.springframework.reactivemongo.services.CustomerService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+@Component
+@RequiredArgsConstructor
+public class CustomerHandler {
+
+    private final CustomerService customerService;
+
+    public Mono<ServerResponse> listCustomers(ServerRequest request){
+        Flux<CustomerDTO> flux = customerService.listCustomers();
+      return ServerResponse.ok()
+                .body(flux, CustomerDTO.class);
+    }
+    public Mono<ServerResponse> getCustomerById(ServerRequest request){
+        return ServerResponse
+                .ok()
+                .body(customerService.getCustomerById(request.pathVariable("customerId"))
+                                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND))),
+                        CustomerDTO.class);
+    }
+}
