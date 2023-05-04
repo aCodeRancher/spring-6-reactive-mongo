@@ -1,11 +1,8 @@
 package guru.springframework.reactivemongo.web.fn;
 
 import guru.springframework.reactivemongo.domain.Customer;
-import guru.springframework.reactivemongo.model.BeerDTO;
 import guru.springframework.reactivemongo.model.CustomerDTO;
-import guru.springframework.reactivemongo.services.BeerServiceImplTest;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +16,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @SpringBootTest
 @AutoConfigureWebTestClient
 public class CustomerEndpointTest {
@@ -30,7 +27,6 @@ public class CustomerEndpointTest {
 
 
     @Test
-    @Order(1)
     void testListCustomers() {
         webTestClient.get().uri(CustomerRouterConfig.CUSTOMER_PATH)
                 .exchange()
@@ -40,7 +36,6 @@ public class CustomerEndpointTest {
     }
 
     @Test
-    @Order(2)
     void testGetById() {
         CustomerDTO customerDTO = getSavedTestCustomer();
 
@@ -49,6 +44,80 @@ public class CustomerEndpointTest {
                 .expectStatus().isOk()
                 .expectHeader().valueEquals("Content-type", "application/json")
                 .expectBody(CustomerDTO.class);
+    }
+
+    @Test
+    void testGetByIdNotFound() {
+         webTestClient.get().uri(CustomerRouterConfig.CUSTOMER_PATH_ID, 999)
+                .exchange()
+                .expectStatus().isNotFound();
+     }
+
+    @Test
+    void testCreateCustomer() {
+        CustomerDTO testCustomer = getSavedTestCustomer();
+         String name = testCustomer.getCustomerName();
+         webTestClient.post().uri(CustomerRouterConfig.CUSTOMER_PATH)
+                .body(Mono.just(testCustomer), CustomerDTO.class)
+                .header("Content-Type", "application/json")
+                .exchange()
+                .expectStatus().isCreated()
+                .expectHeader().exists("location")
+                .expectBody(CustomerDTO.class)
+                 .consumeWith(consumer -> assertTrue(consumer.getResponseBody().getCustomerName().equals(name)));
+     }
+
+    @Test
+     void testUpdateCustomer() {
+        String updatedName = "Customer U";
+        CustomerDTO customerDTO = getSavedTestCustomer();
+        customerDTO.setCustomerName(updatedName);
+
+        webTestClient.put()
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, customerDTO.getId())
+                .body(Mono.just(customerDTO), CustomerDTO.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CustomerDTO.class)
+                .consumeWith(result-> assertTrue(result.getResponseBody().getCustomerName().equals(updatedName)));
+    }
+
+
+    @Test
+    void testUpdateCustomerNotFound() {
+
+        CustomerDTO customerDTO = getSavedTestCustomer();
+        webTestClient.put()
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, 999)
+                .body(Mono.just(customerDTO), CustomerDTO.class)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void testPatchId() {
+        CustomerDTO customerDTO = getSavedTestCustomer();
+        String updatedName = "Customer U";
+        customerDTO.setCustomerName(updatedName);
+        webTestClient.patch()
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, customerDTO.getId())
+                .body(Mono.just(customerDTO), CustomerDTO.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CustomerDTO.class)
+                .consumeWith(result->assertTrue(result.getResponseBody().getCustomerName().equals(updatedName)));
+    }
+
+    @Test
+    void testPatchIdNotFound() {
+        CustomerDTO customerDTO = getSavedTestCustomer();
+        String updatedName = "Customer U";
+        customerDTO.setCustomerName(updatedName);
+        webTestClient.patch()
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, 999)
+                .body(Mono.just(customerDTO), CustomerDTO.class)
+                .exchange()
+                .expectStatus().isNotFound();
     }
 
     public CustomerDTO getSavedTestCustomer(){
