@@ -53,7 +53,7 @@ public class CustomerHandler {
                 .flatMap(customerDTO -> customerService
                         .patchCustomer(request.pathVariable("customerId"),customerDTO))
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
-                .flatMap(savedDto -> ServerResponse.ok().body(customerService.getCustomerById(savedDto.getId()),CustomerDTO.class));
+                .flatMap(savedDto -> ServerResponse.noContent().build());
     }
 }
 
