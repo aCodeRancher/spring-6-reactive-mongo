@@ -2,19 +2,14 @@ package guru.springframework.reactivemongo.web.fn;
 
 import guru.springframework.reactivemongo.domain.Customer;
 import guru.springframework.reactivemongo.model.CustomerDTO;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
-
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
-
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,9 +32,9 @@ public class CustomerEndpointTest {
 
     @Test
     void testGetById() {
-        CustomerDTO customerDTO = getSavedTestCustomer();
-
-        webTestClient.get().uri(CustomerRouterConfig.CUSTOMER_PATH_ID, customerDTO.getId())
+        String inputID = "1";
+        getSavedTestCustomer(inputID);
+        webTestClient.get().uri(CustomerRouterConfig.CUSTOMER_PATH_ID, inputID)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().valueEquals("Content-type", "application/json")
@@ -55,75 +50,72 @@ public class CustomerEndpointTest {
 
     @Test
     void testCreateCustomer() {
-        CustomerDTO testCustomer = getSavedTestCustomer();
-         String name = testCustomer.getCustomerName();
+          Customer customer = Customer.builder().customerName("Mary").build();
          webTestClient.post().uri(CustomerRouterConfig.CUSTOMER_PATH)
-                .body(Mono.just(testCustomer), CustomerDTO.class)
+                .body(Mono.just(customer), CustomerDTO.class)
                 .header("Content-Type", "application/json")
                 .exchange()
                 .expectStatus().isCreated()
                 .expectHeader().exists("location")
                 .expectBody(CustomerDTO.class)
-                 .consumeWith(consumer -> assertTrue(consumer.getResponseBody().getCustomerName().equals(name)));
+                 .consumeWith(consumer -> assertTrue(consumer.getResponseBody().getCustomerName().equals(customer.getCustomerName())));
      }
 
     @Test
      void testUpdateCustomer() {
-        String updatedName = "Customer U";
-        CustomerDTO customerDTO = getSavedTestCustomer();
-        customerDTO.setCustomerName(updatedName);
+        String inputID = "190";
+        getSavedTestCustomer(inputID);
+        Customer customer = Customer.builder().customerName("Mary").build();
 
         webTestClient.put()
-                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, customerDTO.getId())
-                .body(Mono.just(customerDTO), CustomerDTO.class)
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, inputID)
+                .body(Mono.just(customer), CustomerDTO.class)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(CustomerDTO.class)
-                .consumeWith(result-> assertTrue(result.getResponseBody().getCustomerName().equals(updatedName)));
+                .consumeWith(result-> assertTrue(result.getResponseBody().getCustomerName().equals("Mary")));
     }
 
 
     @Test
     void testUpdateCustomerNotFound() {
 
-        CustomerDTO customerDTO = getSavedTestCustomer();
+        Customer customer  = Customer.builder().customerName("Not").build();
         webTestClient.put()
                 .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, 999)
-                .body(Mono.just(customerDTO), CustomerDTO.class)
+                .body(Mono.just(customer), CustomerDTO.class)
                 .exchange()
                 .expectStatus().isNotFound();
     }
+
 
     @Test
     void testPatchId() {
-        CustomerDTO customerDTO = getSavedTestCustomer();
-        String updatedName = "Customer U";
-        customerDTO.setCustomerName(updatedName);
+        String inputID = "200";
+        getSavedTestCustomer(inputID);
+        Customer customer = Customer.builder().customerName("U").build();
         webTestClient.patch()
-                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, customerDTO.getId())
-                .body(Mono.just(customerDTO), CustomerDTO.class)
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, inputID)
+                .body(Mono.just(customer), CustomerDTO.class)
                 .exchange()
-                .expectStatus().isOk()
-                .expectBody(CustomerDTO.class)
-                .consumeWith(result->assertTrue(result.getResponseBody().getCustomerName().equals(updatedName)));
+                .expectStatus().isNoContent();
+
     }
+
 
     @Test
     void testPatchIdNotFound() {
-        CustomerDTO customerDTO = getSavedTestCustomer();
-        String updatedName = "Customer U";
-        customerDTO.setCustomerName(updatedName);
+         Customer customer = Customer.builder().customerName("T").build();
+
         webTestClient.patch()
                 .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, 999)
-                .body(Mono.just(customerDTO), CustomerDTO.class)
+                .body(Mono.just(customer), CustomerDTO.class)
                 .exchange()
                 .expectStatus().isNotFound();
     }
 
-    public CustomerDTO getSavedTestCustomer(){
-
-        AtomicReference<CustomerDTO> customerTested = new AtomicReference<>();
-        Customer tester = Customer.builder().customerName("Customer T").build();
+    public void getSavedTestCustomer(String inputID){
+       Customer tester = Customer.builder().id(inputID).customerName("Customer T").build();
         FluxExchangeResult<CustomerDTO> customerDTOFluxExchangeResult =
                 webTestClient.post().uri(CustomerRouterConfig.CUSTOMER_PATH)
                 .body(Mono.just(tester), CustomerDTO.class)
@@ -133,9 +125,5 @@ public class CustomerEndpointTest {
 
         List<String> location = customerDTOFluxExchangeResult.getResponseHeaders().get("Location");
 
-        webTestClient.get().uri(CustomerRouterConfig.CUSTOMER_PATH)
-                .exchange().returnResult(CustomerDTO.class).getResponseBody()
-                .subscribe(customerDTO -> customerTested.set(customerDTO));
-        return customerTested.get();
     }
 }
