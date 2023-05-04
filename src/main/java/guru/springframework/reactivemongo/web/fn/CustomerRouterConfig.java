@@ -23,6 +23,9 @@ public class CustomerRouterConfig {
         return route()
                 .GET(CUSTOMER_PATH, accept(APPLICATION_JSON), handler::listCustomers)
                 .GET(CUSTOMER_PATH_ID, accept(APPLICATION_JSON), handler::getCustomerById)
+                .POST(CUSTOMER_PATH, accept(APPLICATION_JSON), handler::createNewCustomer)
+                .PUT(CUSTOMER_PATH_ID, accept(APPLICATION_JSON), handler::updateCustomerById)
+                .PATCH(CUSTOMER_PATH_ID, accept(APPLICATION_JSON), handler::patchCustomerById)
                 .build();
     }
 }
