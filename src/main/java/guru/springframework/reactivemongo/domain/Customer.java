@@ -24,7 +24,7 @@ public class Customer {
     @Id
     private String id;
 
-    @Size(max = 255)
+    @Size(max = 255, min=2)
     private String customerName;
 
     @CreatedDate
