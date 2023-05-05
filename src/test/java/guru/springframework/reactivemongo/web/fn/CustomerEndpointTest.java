@@ -61,6 +61,15 @@ public class CustomerEndpointTest {
                 .expectBody(CustomerDTO.class)
                  .consumeWith(consumer -> assertTrue(consumer.getResponseBody().getCustomerName().equals(customer.getCustomerName())));
      }
+    @Test
+    void testCreateCustomerInvalid() {
+        Customer customer = Customer.builder().customerName("M").build();
+        webTestClient.post().uri(CustomerRouterConfig.CUSTOMER_PATH)
+                .body(Mono.just(customer), CustomerDTO.class)
+                .header("Content-Type", "application/json")
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
 
     @Test
      void testUpdateCustomer() {
@@ -77,6 +86,19 @@ public class CustomerEndpointTest {
                 .consumeWith(result-> assertTrue(result.getResponseBody().getCustomerName().equals("Mary")));
     }
 
+    @Test
+    void testUpdateCustomerInvalid() {
+        String inputID = "191";
+        getSavedTestCustomer(inputID);
+        Customer customer = Customer.builder().customerName("M").build();
+
+        webTestClient.put()
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, inputID)
+                .body(Mono.just(customer), CustomerDTO.class)
+                .exchange()
+                .expectStatus().isBadRequest();
+
+    }
 
     @Test
     void testUpdateCustomerNotFound() {
@@ -94,7 +116,7 @@ public class CustomerEndpointTest {
     void testPatchId() {
         String inputID = "200";
         getSavedTestCustomer(inputID);
-        Customer customer = Customer.builder().customerName("U").build();
+        Customer customer = Customer.builder().customerName("Updated Name").build();
         webTestClient.patch()
                 .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, inputID)
                 .body(Mono.just(customer), CustomerDTO.class)
@@ -106,13 +128,25 @@ public class CustomerEndpointTest {
 
     @Test
     void testPatchIdNotFound() {
-         Customer customer = Customer.builder().customerName("T").build();
+         Customer customer = Customer.builder().customerName("Test").build();
 
         webTestClient.patch()
                 .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, "999")
                 .body(Mono.just(customer), CustomerDTO.class)
                 .exchange()
                 .expectStatus().isNotFound();
+    }
+
+    @Test
+    void testPatchIdInvalid() {
+        String inputID = "201";
+        getSavedTestCustomer(inputID);
+        Customer customer = Customer.builder().customerName("U").build();
+        webTestClient.patch()
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, inputID)
+                .body(Mono.just(customer), CustomerDTO.class)
+                .exchange()
+                .expectStatus().isBadRequest();
     }
 
     public void getSavedTestCustomer(String inputID){
@@ -141,7 +175,7 @@ public class CustomerEndpointTest {
 
     @Test
     void testUpdateIdNotFound() {
-        Customer ctest = Customer.builder().customerName("T").build();
+        Customer ctest = Customer.builder().customerName("Tester").build();
         webTestClient.put()
                 .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, "999")
                 .body(Mono.just(ctest), CustomerDTO.class)
