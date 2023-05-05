@@ -3,10 +3,7 @@ package guru.springframework.reactivemongo.web.fn;
 import guru.springframework.reactivemongo.domain.Beer;
 import guru.springframework.reactivemongo.model.BeerDTO;
 import guru.springframework.reactivemongo.services.BeerServiceImplTest;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.hamcrest.Matchers.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -26,6 +25,7 @@ class BeerEndpointTest {
 
     @Autowired
     WebTestClient webTestClient;
+
 
     @Test
     void testPatchIdNotFound() {
@@ -95,6 +95,7 @@ class BeerEndpointTest {
 
         BeerDTO beerDTO = getSavedTestBeer();
         beerDTO.setBeerName("New");
+
 
         webTestClient.put()
                 .uri(BeerRouterConfig.BEER_PATH_ID, beerDTO.getId())
@@ -179,15 +180,17 @@ class BeerEndpointTest {
     }
 
     public BeerDTO getSavedTestBeer(){
+        Beer theBeerTest= BeerServiceImplTest.getTestBeer();
         FluxExchangeResult<BeerDTO> beerDTOFluxExchangeResult = webTestClient.post().uri(BeerRouterConfig.BEER_PATH)
-                .body(Mono.just(BeerServiceImplTest.getTestBeer()), BeerDTO.class)
+                .body(Mono.just(theBeerTest), BeerDTO.class)
                 .header("Content-Type", "application/json")
                 .exchange()
-                .returnResult(BeerDTO.class);
-
+                .returnResult(BeerDTO.class) ;
+        AtomicReference<BeerDTO> result = new AtomicReference<>();
         List<String> location = beerDTOFluxExchangeResult.getResponseHeaders().get("Location");
+        beerDTOFluxExchangeResult.getResponseBody().subscribe(r-> result.set(r));
 
-        return webTestClient.get().uri(BeerRouterConfig.BEER_PATH)
+        return webTestClient.get().uri(BeerRouterConfig.BEER_PATH_ID, result.get().getId())
                 .exchange().returnResult(BeerDTO.class).getResponseBody().blockFirst();
     }
 
