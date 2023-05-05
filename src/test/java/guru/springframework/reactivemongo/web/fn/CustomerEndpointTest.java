@@ -109,7 +109,7 @@ public class CustomerEndpointTest {
          Customer customer = Customer.builder().customerName("T").build();
 
         webTestClient.patch()
-                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, 999)
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, "999")
                 .body(Mono.just(customer), CustomerDTO.class)
                 .exchange()
                 .expectStatus().isNotFound();
@@ -138,4 +138,25 @@ public class CustomerEndpointTest {
                 .expectStatus()
                 .isNoContent();
     }
+
+    @Test
+    void testUpdateIdNotFound() {
+        Customer ctest = Customer.builder().customerName("T").build();
+        webTestClient.put()
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, "999")
+                .body(Mono.just(ctest), CustomerDTO.class)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    void testDeleteCustomerNotFound() {
+        webTestClient.delete()
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, "999")
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+
 }
