@@ -26,6 +26,7 @@ public class CustomerRouterConfig {
                 .POST(CUSTOMER_PATH, accept(APPLICATION_JSON), handler::createNewCustomer)
                 .PUT(CUSTOMER_PATH_ID, accept(APPLICATION_JSON), handler::updateCustomerById)
                 .PATCH(CUSTOMER_PATH_ID, accept(APPLICATION_JSON), handler::patchCustomerById)
+                .DELETE(CUSTOMER_PATH_ID,accept(APPLICATION_JSON), handler::deleteCustomerById)
                 .build();
     }
 }

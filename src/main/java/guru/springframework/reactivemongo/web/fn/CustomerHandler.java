@@ -23,6 +23,13 @@ public class CustomerHandler {
       return ServerResponse.ok()
                 .body(flux, CustomerDTO.class);
     }
+
+    public Mono<ServerResponse> deleteCustomerById(ServerRequest request){
+        return customerService.getCustomerById(request.pathVariable("customerId"))
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND)))
+                .flatMap(customerDTO -> customerService.deleteCustomerById(customerDTO.getId()))
+                .then(ServerResponse.noContent().build());
+    }
     public Mono<ServerResponse> getCustomerById(ServerRequest request){
         return ServerResponse
                 .ok()
