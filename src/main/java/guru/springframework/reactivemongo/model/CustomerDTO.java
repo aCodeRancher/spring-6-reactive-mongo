@@ -1,6 +1,7 @@
 package guru.springframework.reactivemongo.model;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,6 +21,7 @@ public class CustomerDTO {
     private String id;
 
     @NotBlank
+    @Size(max=255, min=2)
     private String customerName;
     private LocalDateTime createdDate;
     private LocalDateTime lastModifiedDate;
