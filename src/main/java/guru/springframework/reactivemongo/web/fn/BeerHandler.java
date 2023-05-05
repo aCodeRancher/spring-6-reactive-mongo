@@ -65,7 +65,8 @@ public class BeerHandler {
                         .created(UriComponentsBuilder
                                 .fromPath(BeerRouterConfig.BEER_PATH_ID)
                                 .build(beerDTO.getId()))
-                        .build());
+                        .body(beerService.getById(beerDTO.getId()), BeerDTO.class));
+
     }
 
 
