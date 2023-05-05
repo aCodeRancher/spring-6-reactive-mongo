@@ -2,6 +2,7 @@ package guru.springframework.reactivemongo.web.fn;
 
 import guru.springframework.reactivemongo.domain.Customer;
 import guru.springframework.reactivemongo.model.CustomerDTO;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -125,5 +126,16 @@ public class CustomerEndpointTest {
 
         List<String> location = customerDTOFluxExchangeResult.getResponseHeaders().get("Location");
 
+    }
+
+    @Test
+    @Order(999)
+    void testDeleteCustomer() {
+
+        webTestClient.delete()
+                .uri(CustomerRouterConfig.CUSTOMER_PATH_ID, "190")
+                .exchange()
+                .expectStatus()
+                .isNoContent();
     }
 }
