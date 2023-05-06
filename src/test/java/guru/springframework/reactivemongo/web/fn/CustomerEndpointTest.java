@@ -9,8 +9,11 @@ import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWeb
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.reactive.server.FluxExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import java.util.List;
+
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -191,6 +194,20 @@ public class CustomerEndpointTest {
                 .expectStatus()
                 .isNotFound();
     }
+
+    @Test
+    @Order(2)
+    void testListCustomerName() {
+
+          webTestClient.get().uri(UriComponentsBuilder
+                        .fromPath(CustomerRouterConfig.CUSTOMER_PATH)
+                        .queryParam("customerName","Customer 1").build().toUri())
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().valueEquals("Content-type", "application/json")
+                .expectBody().jsonPath("$.size()").value(equalTo(1));
+    }
+
 
 
 }

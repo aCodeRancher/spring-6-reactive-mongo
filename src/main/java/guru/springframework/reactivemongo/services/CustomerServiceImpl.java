@@ -1,6 +1,7 @@
 package guru.springframework.reactivemongo.services;
 
 import guru.springframework.reactivemongo.mappers.CustomerMapper;
+import guru.springframework.reactivemongo.model.BeerDTO;
 import guru.springframework.reactivemongo.model.CustomerDTO;
 import guru.springframework.reactivemongo.repositories.CustomerRepsoitory;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,11 @@ public class CustomerServiceImpl implements CustomerService {
                 .map(customerMapper::customerToCustomerDto);
     }
 
+    @Override
+    public Flux<CustomerDTO> findByCustomerName(String customerName) {
+        return customerRepository.findByCustomerName(customerName)
+                .map(customerMapper::customerToCustomerDto);
+    }
     @Override
     public Mono<CustomerDTO> getCustomerById(String customerId) {
         return customerRepository.findById(customerId)

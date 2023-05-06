@@ -32,8 +32,15 @@ public class CustomerHandler {
             throw new ServerWebInputException(errors.toString());
         }
     }
+
     public Mono<ServerResponse> listCustomers(ServerRequest request){
-        Flux<CustomerDTO> flux = customerService.listCustomers();
+        Flux<CustomerDTO> flux;
+        if (request.queryParam("customerName").isPresent()){
+            flux = customerService.findByCustomerName(request.queryParam("customerName").get());
+        } else {
+            flux = customerService.listCustomers();
+        }
+
       return ServerResponse.ok()
                 .body(flux, CustomerDTO.class);
     }
