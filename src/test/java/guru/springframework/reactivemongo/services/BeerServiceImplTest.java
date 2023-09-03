@@ -83,6 +83,29 @@ class BeerServiceImplTest {
     }
 
     @Test
+    @DisplayName("Test Update Beer Using Block 1")
+    void testUpdateBlocking1() {
+        final String newName = "New Beer Name";  // use final so cannot mutate
+        BeerDTO savedBeerDto = getSavedBeerDto();
+        savedBeerDto.setBeerName(newName);
+
+        AtomicReference<BeerDTO> atomicDto = new AtomicReference<>();
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        Mono<BeerDTO> savedMono = beerService.saveBeer(Mono.just(beerDTO));
+
+        savedMono.subscribe(savedDto -> {
+            System.out.println(savedDto.getId());
+            atomicBoolean.set(true);
+            atomicDto.set(savedDto);
+        });
+
+        await().untilTrue(atomicBoolean);
+
+       Mono<BeerDTO> updatedBeerDto = beerService.updateBeer( atomicDto.get().getId(), atomicDto.get());
+        updatedBeerDto.subscribe(beerDTO-> assertThat(beerDTO.getBeerName().equals(newName)));
+    }
+
+    @Test
     @DisplayName("Test Update Using Reactive Streams")
     void testUpdateStreaming() {
         final String newName = "New Beer Name";  // use final so cannot mutate
@@ -90,20 +113,30 @@ class BeerServiceImplTest {
         AtomicReference<BeerDTO> atomicDto = new AtomicReference<>();
 
         beerService.saveBeer(Mono.just(getTestBeerDto()))
-                .map(savedBeerDto -> {
-                    savedBeerDto.setBeerName(newName);
-                    return savedBeerDto;
-                })
-                .flatMap(beerService::saveBeer) // save updated beer
-                .flatMap(savedUpdatedDto -> beerService.getById(savedUpdatedDto.getId())) // get from db
-                .subscribe(dtoFromDb -> {
-                    atomicDto.set(dtoFromDb);
-                });
+                .subscribe(savedDTO -> atomicDto.set(savedDTO));
 
         await().until(() -> atomicDto.get() != null);
-        assertThat(atomicDto.get().getBeerName()).isEqualTo(newName);
+
+        beerService.updateBeer(atomicDto.get().getId(), atomicDto.get())
+                .subscribe( beerDto -> assertThat(beerDto.getBeerName().equals(newName)));
     }
 
+
+    @Test
+    @DisplayName("Test Patch Using Reactive Streams")
+    void testPatch() {
+        final String newName = "New Beer Name";  // use final so cannot mutate
+
+        AtomicReference<BeerDTO> atomicDto = new AtomicReference<>();
+
+        beerService.saveBeer(Mono.just(getTestBeerDto()))
+                .subscribe(savedDTO -> atomicDto.set(savedDTO));
+
+        await().until(() -> atomicDto.get() != null);
+
+        beerService.patchBeer(atomicDto.get().getId(), atomicDto.get())
+                .subscribe( beerDto -> assertThat(beerDto.getBeerName().equals(newName)));
+    }
     @Test
     void testDeleteBeer() {
         BeerDTO beerToDelete = getSavedBeerDto();
