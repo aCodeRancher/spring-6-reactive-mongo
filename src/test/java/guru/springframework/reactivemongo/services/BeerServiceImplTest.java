@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,6 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 class BeerServiceImplTest {
@@ -127,16 +129,64 @@ class BeerServiceImplTest {
     void testPatch() {
         final String newName = "New Beer Name";  // use final so cannot mutate
 
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        BeerDTO savedBeer = getSavedBeerDto();
+        savedBeer.setBeerName(newName);
+
+        Mono<BeerDTO> beerDTOMono=  beerService.patchBeer(savedBeer.getId(), savedBeer);
+        beerDTOMono.subscribe( beerDto -> {
+                                       assertTrue( beerDto.getBeerName().equals(newName));
+                                       atomicBoolean.set(true);
+                                      });
+        await().untilTrue(atomicBoolean);
+    }
+
+    @Test
+    @DisplayName("Test Patch Beer Reactive Stream")
+    void testPatchBeerStreaming() {
+        final Integer quantity = 20;
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+
+        BeerDTO savedBeer = getSavedBeerDto();
+        assertThat(savedBeer.getQuantityOnHand()).isEqualTo(12);
+
+        savedBeer.setQuantityOnHand(quantity);
+
+        Mono<BeerDTO> mono = beerService.patchBeer(savedBeer.getId(), savedBeer);
+        mono.subscribe(updatedBeer -> {
+
+            assertThat(updatedBeer.getQuantityOnHand()).isEqualTo(20);
+            assertThat(updatedBeer.getBeerName()).isEqualTo("Space Dust");
+            atomicBoolean.set(true);
+        });
+
+        await().untilTrue(atomicBoolean);
+    }
+
+    @Test
+    @DisplayName("Test Patch Using Reactive Streams")
+    void testPatch1() {
+        final String newName = "New Beer Name";  // use final so cannot mutate
+
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+
         AtomicReference<BeerDTO> atomicDto = new AtomicReference<>();
 
         beerService.saveBeer(Mono.just(getTestBeerDto()))
-                .subscribe(savedDTO -> atomicDto.set(savedDTO));
+                .subscribe(savedDTO -> {
+                    savedDTO.setBeerName(newName);
+                    atomicDto.set(savedDTO);
+                });
 
         await().until(() -> atomicDto.get() != null);
+        String beer = atomicDto.get().getBeerName();
 
-        beerService.patchBeer(atomicDto.get().getId(), atomicDto.get())
-                .subscribe( beerDto -> assertThat(beerDto.getBeerName().equals(newName)));
+        Mono<BeerDTO> beerDTOMono = beerService.patchBeer(atomicDto.get().getId(), atomicDto.get());
+        beerDTOMono.subscribe(beerDto -> {
+            assertTrue(beerDto.getBeerName().equals(newName));
+        });
     }
+
     @Test
     void testDeleteBeer() {
         BeerDTO beerToDelete = getSavedBeerDto();
