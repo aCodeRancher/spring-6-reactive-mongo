@@ -6,7 +6,8 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-
+import org.springframework.core.annotation.Order;
+import org.springframework.boot.actuate.autoconfigure.security.reactive.EndpointRequest;
 /**
  * Created by jt, Spring Framework Guru.
  */
@@ -15,6 +16,16 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 public class SpringSecConfig {
 
     @Bean
+    @Order(1)
+    public SecurityWebFilterChain actutatorSecurityFilterChain(ServerHttpSecurity http) throws Exception {
+        http.securityMatcher(EndpointRequest.toAnyEndpoint())
+                .authorizeExchange(authorize -> authorize.anyExchange().permitAll());
+
+        return http.build();
+    }
+
+    @Bean
+    @Order(2)
     SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http){
         http.authorizeExchange(authorizeExchangeSpec -> authorizeExchangeSpec.anyExchange().authenticated())
                 .oauth2ResourceServer(oAuth2ResourceServerSpec -> oAuth2ResourceServerSpec.jwt(Customizer.withDefaults()))
