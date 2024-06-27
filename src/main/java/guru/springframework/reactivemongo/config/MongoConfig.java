@@ -31,7 +31,7 @@ public class MongoConfig extends AbstractReactiveMongoConfiguration {
         return "sfg";
     }
 
-   /*@Override
+   @Override
     protected void configureClientSettings(MongoClientSettings.Builder builder) {
         builder.credential(MongoCredential.createCredential("root",
                 "admin", "example".toCharArray()))
@@ -40,7 +40,7 @@ public class MongoConfig extends AbstractReactiveMongoConfiguration {
                             new ServerAddress(mongoDBHost, 27017)
                     )));
                 });
-    }*/
+    }
 }
 
 
